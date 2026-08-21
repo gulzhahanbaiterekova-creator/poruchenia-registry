@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Реестр поручений филиала</title>
+<style>
+  :root{
+    --bg:#f3f4f7;
+    --panel:#ffffff;
+    --border:#e3e5eb;
+    --text:#1e2230;
+    --text-muted:#6b7380;
+    --text-faint:#9aa0ac;
+    --primary:#3457d5;
+    --primary-dark:#2643ab;
+    --primary-bg:#eaeefc;
+    --red:#c53030;
+    --red-bg:#fdecec;
+    --red-border:#f3b9b9;
+    --yellow:#93650a;
+    --yellow-bg:#fff6e0;
+    --yellow-border:#f2d78a;
+    --green:#1f8b4c;
+    --green-bg:#e8f8ee;
+    --green-border:#aee3c3;
+    --neutral-bg:#ffffff;
+    --radius:12px;
+    --shadow:0 1px 2px rgba(20,22,30,.04), 0 4px 14px rgba(20,22,30,.05);
+    font-size:15px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;}
+  input,textarea,select{font-family:inherit;font-size:inherit;color:inherit;}
+  ::selection{background:var(--primary-bg);}
+
+  /* ---------- App shell ---------- */
+  #app{display:flex;flex-direction:column;min-height:100vh;}
+
+  header.topbar{
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+    padding:14px 20px;
+    position:sticky;top:0;z-index:20;
+  }
+  .topbar-row{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    max-width:1300px;margin:0 auto;
+  }
+  .brand{display:flex;align-items:center;gap:10px;flex:1;min-width:220px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#6c8cf5);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex:none;
+  }
+  #branchName{
+    font-size:19px;font-weight:700;border:none;background:transparent;color:var(--text);
+    padding:4px 6px;border-radius:8px;min-width:120px;max-width:360px;width:100%;
+  }
+  #branchName:hover, #branchName:focus{background:var(--primary-bg);outline:none;}
+  .branch-sub{font-size:12px;color:var(--text-faint);margin-top:-2px;}
+
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;
+    border:1px solid var(--border);background:var(--panel);color:var(--text);
+    padding:9px 14px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;
+    transition:background .12s,border-color .12s,transform .05s;
+    white-space:nowrap;
+  }
+  .btn:hover{background:#f5f6f9;}
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-ghost{background:transparent;border-color:transparent;}
+  .btn-ghost:hover{background:#f0f1f5;}
+  .btn-danger{color:var(--red);}
+  .btn-danger:hover{background:var(--red-bg);}
+  .btn-sm{padding:6px 10px;font-size:13px;border-radius:8px;}
+  .btn-icon{padding:8px;border-radius:8px;line-height:0;}
+  .btn[disabled]{opacity:.5;cursor:not-allowed;}
+
+  .mic-btn{
+    border:1px solid var(--border);background:var(--panel);border-radius:8px;
+    width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:var(--text-muted);transition:all .15s;
+  }
+  .mic-btn:hover{background:#f5f6f9;}
+  .mic-btn.recording{
+    background:var(--red);border-color:var(--red);color:#fff;
+    animation:pulse 1.1s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(197,48,48,.45);}
+    70%{box-shadow:0 0 0 9px rgba(197,48,48,0);}
+    100%{box-shadow:0 0 0 0 rgba(197,48,48,0);}
+  }
+
+  .stats-row{
+    display:flex;gap:10px;flex-wrap:wrap;max-width:1300px;margin:12px auto 0;
+  }
+  .stat-chip{
+    background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:8px 14px;min-width:110px;flex:1;
+  }
+  .stat-chip .num{font-size:20px;font-weight:700;line-height:1.1;}
+  .stat-chip .lbl{font-size:12px;color:var(--text-muted);margin-top:2px;}
+  .stat-chip.red .num{color:var(--red);}
+  .stat-chip.yellow .num{color:var(--yellow);}
+  .stat-chip.green .num{color:var(--green);}
+
+  .layout{
+    flex:1;display:flex;max-width:1300px;width:100%;margin:0 auto;gap:20px;padding:20px;align-items:flex-start;
+  }
+  aside.sidebar{
+    width:250px;flex:none;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px;position:sticky;top:96px;
+  }
+  .sidebar h3{margin:0 0 10px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-faint);font-weight:700;}
+  .dept-item{
+    display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;cursor:pointer;
+    color:var(--text);font-size:14px;font-weight:500;
+  }
+  .dept-item:hover{background:#f5f6f9;}
+  .dept-item.active{background:var(--primary-bg);color:var(--primary-dark);}
+  .dept-item .dept-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .dept-item .dept-count{
+    font-size:12px;color:var(--text-faint);background:#f0f1f5;border-radius:20px;padding:1px 8px;flex:none;
+  }
+  .dept-item.active .dept-count{background:#dbe3fb;color:var(--primary-dark);}
+  .dept-item .dept-del{
+    display:none;flex:none;color:var(--text-faint);border:none;background:transparent;cursor:pointer;padding:2px 4px;border-radius:5px;font-size:15px;
+  }
+  .dept-item:hover .dept-del{display:inline-block;}
+  .dept-item .dept-del:hover{color:var(--red);background:var(--red-bg);}
+
+  .add-dept-form{display:flex;gap:6px;margin-top:10px;}
+  .add-dept-form input{
+    flex:1;min-width:0;border:1px solid var(--border);border-radius:8px;padding:8px 9px;font-size:13px;
+  }
+  .add-dept-form input:focus{outline:2px solid var(--primary-bg);border-color:var(--primary);}
+
+  main.content{flex:1;min-width:0;}
+
+  .content-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .content-title{font-size:18px;font-weight:700;}
+  .filters{display:flex;gap:6px;flex-wrap:wrap;}
+  .filter-chip{
+    border:1px solid var(--border);background:var(--panel);border-radius:20px;padding:6px 13px;font-size:13px;font-weight:600;
+    cursor:pointer;color:var(--text-muted);
+  }
+  .filter-chip:hover{background:#f5f6f9;}
+  .filter-chip.active{background:var(--text);color:#fff;border-color:var(--text);}
+
+  .group-title{font-size:13px;font-weight:700;color:var(--text-muted);margin:20px 0 8px;text-transform:uppercase;letter-spacing:.03em;}
+  .group-title:first-child{margin-top:0;}
+
+  .cards{display:flex;flex-direction:column;gap:10px;}
+  .card{
+    background:var(--neutral-bg);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px 16px;box-shadow:var(--shadow);cursor:pointer;position:relative;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .card.red{background:var(--red-bg);border-color:var(--red-border);}
+  .card.yellow{background:var(--yellow-bg);border-color:var(--yellow-border);}
+  .card.green{background:var(--green-bg);border-color:var(--green-border);}
+
+  .card-top{display:flex;align-items:flex-start;gap:10px;justify-content:space-between;}
+  .card-text{font-size:15px;font-weight:600;line-height:1.4;flex:1;}
+  .card.green .card-text{text-decoration:line-through;text-decoration-color:var(--green);opacity:.75;}
+  .card-actions{display:flex;gap:4px;flex:none;}
+  .card-actions button{
+    border:none;background:transparent;color:var(--text-faint);cursor:pointer;padding:4px 6px;border-radius:6px;font-size:14px;
+  }
+  .card-actions button:hover{background:rgba(0,0,0,.06);color:var(--text);}
+
+  .card-meta{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12.5px;color:var(--text-muted);align-items:center;}
+  .card-meta .meta-item{display:flex;align-items:center;gap:4px;}
+  .badge-dept{
+    background:#eef0f5;color:var(--text-muted);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600;
+  }
+  .card.red .badge-dept, .card.yellow .badge-dept, .card.green .badge-dept{background:rgba(255,255,255,.6);}
+
+  .status-pill{
+    display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:5px 12px;font-size:12.5px;font-weight:700;
+    border:1px solid transparent;cursor:pointer;user-select:none;
+  }
+  .status-pill .dot{width:7px;height:7px;border-radius:50%;}
+  .status-pill.st-progress{background:#eef0f5;color:var(--text-muted);}
+  .status-pill.st-progress .dot{background:var(--text-faint);}
+  .status-pill.st-overdue{background:#fff;color:var(--red);border-color:var(--red-border);}
+  .status-pill.st-overdue .dot{background:var(--red);}
+  .status-pill.st-soon{background:#fff;color:var(--yellow);border-color:var(--yellow-border);}
+  .status-pill.st-soon .dot{background:var(--yellow);}
+  .status-pill.st-done{background:#fff;color:var(--green);border-color:var(--green-border);}
+  .status-pill.st-done .dot{background:var(--green);}
+  .status-pill:hover{filter:brightness(.97);}
+
+  .card-note{font-size:13px;color:var(--text-muted);background:rgba(0,0,0,.03);border-radius:8px;padding:7px 10px;}
+
+  .empty-state{
+    text-align:center;padding:60px 20px;color:var(--text-muted);
+    background:var(--panel);border:1px dashed var(--border);border-radius:var(--radius);
+  }
+  .empty-state .big{font-size:34px;margin-bottom:8px;}
+  .empty-state h4{margin:0 0 6px;color:var(--text);font-size:16px;}
+  .empty-state p{margin:0 0 16px;font-size:13.5px;}
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(20,22,30,.45);display:flex;align-items:flex-start;justify-content:center;
+    padding:30px 16px;overflow-y:auto;z-index:100;
+  }
+  .overlay.hidden{display:none;}
+  .hidden{display:none !important;}
+  .modal{
+    background:var(--panel);border-radius:14px;width:100%;max-width:520px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);
+    margin:auto;
+  }
+  .modal h2{margin:0 0 16px;font-size:18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.02em;}
+  .field-row{display:flex;gap:6px;align-items:flex-start;}
+  .field textarea, .field input, .field select{
+    width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 11px;font-size:14px;background:#fff;color:var(--text);
+  }
+  .field textarea{resize:vertical;min-height:64px;}
+  .field textarea:focus, .field input:focus, .field select:focus{outline:2px solid var(--primary-bg);border-color:var(--primary);}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .voice-hint{font-size:11.5px;color:var(--text-faint);margin-top:5px;}
+  .modal-actions{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:10px;}
+  .modal-actions .right{display:flex;gap:8px;margin-left:auto;}
+
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:#1e2230;color:#fff;padding:10px 18px;border-radius:9px;font-size:13.5px;
+    box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 860px){
+    .layout{flex-direction:column;padding:14px;gap:14px;}
+    aside.sidebar{
+      width:100%;position:static;display:flex;flex-direction:column;padding:12px;
+    }
+    .dept-list{display:flex;overflow-x:auto;gap:6px;padding-bottom:4px;}
+    .dept-item{flex:none;}
+    .two-col{grid-template-columns:1fr;}
+    .stats-row{padding:0 14px;}
+    .topbar{padding:12px 14px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="topbar">
+    <div class="topbar-row">
+      <div class="brand">
+        <div class="brand-mark">Р</div>
+        <div>
+          <input id="branchName" type="text" value="" maxlength="80" placeholder="Название филиала">
+          <div class="branch-sub">Реестр поручений</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" data-action="voice-new">🎤 Голосом</button>
+      <button class="btn" data-action="open-new">+ Новое поручение</button>
+    </div>
+    <div class="stats-row" id="statsRow"></div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <h3>Отделы</h3>
+      <div class="dept-list" id="deptList"></div>
+      <form class="add-dept-form" id="addDeptForm">
+        <input type="text" id="newDeptInput" placeholder="Новый отдел…" maxlength="60">
+        <button type="submit" class="btn btn-sm btn-primary">+</button>
+      </form>
+    </aside>
+
+    <main class="content">
+      <div class="content-head">
+        <div class="content-title" id="contentTitle">Все отделы</div>
+        <div class="filters" id="statusFilters"></div>
+      </div>
+      <div id="listArea"></div>
+    </main>
+  </div>
+</div>
+
+<div class="overlay hidden" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Новое поручение</h2>
+    <form id="assignmentForm">
+      <input type="hidden" id="f-id">
+      <div class="field">
+        <label>Поручение *</label>
+        <div class="field-row">
+          <textarea id="f-text" required placeholder="Что нужно сделать…"></textarea>
+          <button type="button" class="mic-btn" data-mic-target="f-text" title="Надиктовать">🎤</button>
+        </div>
+        <div class="voice-hint" id="voiceHintText"></div>
+      </div>
+      <div class="two-col">
+        <div class="field">
+          <label>Отдел *</label>
+          <select id="f-dept" required></select>
+        </div>
+        <div class="field">
+          <label>Исполнитель</label>
+          <input type="text" id="f-executor" placeholder="ФИО (необязательно)">
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="field">
+          <label>Дата поручения *</label>
+          <input type="date" id="f-assigned" required>
+        </div>
+        <div class="field">
+          <label>Срок исполнения *</label>
+          <input type="date" id="f-due" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Примечание</label>
+        <div class="field-row">
+          <textarea id="f-note" placeholder="Дополнительные детали (необязательно)"></textarea>
+          <button type="button" class="mic-btn" data-mic-target="f-note" title="Надиктовать">🎤</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger btn-ghost hidden" id="deleteBtn" data-action="delete-current">Удалить</button>
+        <div class="right">
+          <button type="button" class="btn" data-action="close-modal">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "poruchenia_registry_v1";
+
+  var DEFAULT_STATE = {
+    branchName: "Мой филиал",
+    departments: [],
+    assignments: [],
+    filterDept: "all",
+    filterStatus: "all"
+  };
+
+  var state = loadState();
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        return Object.assign({}, DEFAULT_STATE, parsed);
+      }
+    }catch(e){ console.warn("Не удалось прочитать сохранённые данные", e); }
+    return JSON.parse(JSON.stringify(DEFAULT_STATE));
+  }
+
+  function saveState(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch(e){ console.warn("Не удалось сохранить данные", e); }
+  }
+
+  function uid(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  }
+
+  function todayISO(){
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
+  }
+  function pad(n){ return n < 10 ? "0"+n : ""+n; }
+
+  function daysBetween(fromISO, toISO){
+    var a = new Date(fromISO + "T00:00:00");
+    var b = new Date(toISO + "T00:00:00");
+    return Math.round((b - a) / 86400000);
+  }
+
+  function escapeHtml(str){
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function formatDate(iso){
+    if(!iso) return "—";
+    var p = iso.split("-");
+    if(p.length !== 3) return iso;
+    return p[2] + "." + p[1] + "." + p[0];
+  }
+
+  /* ---------- Derived helpers ---------- */
+
+  function getDept(id){
+    return state.departments.find(function(d){ return d.id === id; });
+  }
+
+  function deptDisplayName(a){
+    var d = getDept(a.departmentId);
+    if(d) return d.name;
+    return (a.departmentNameSnapshot || "Без отдела") + " (отдел удалён)";
+  }
+
+  // computed visual status: 'done' | 'overdue' | 'soon' | 'progress'
+  function computeStatus(a){
+    if(a.status === "done") return "done";
+    var today = todayISO();
+    var diff = daysBetween(today, a.dueDate);
+    if(diff < 0) return "overdue";
+    if(diff <= 2) return "soon";
+    return "progress";
+  }
+
+  function isOverdue(a){ return a.status !== "done" && daysBetween(todayISO(), a.dueDate) < 0; }
+
+  /* ---------- Rendering ---------- */
+
+  function render(){
+    renderHeader();
+    renderStats();
+    renderSidebar();
+    renderStatusFilters();
+    renderContentTitle();
+    renderList();
+  }
+
+  function renderHeader(){
+    var input = document.getElementById("branchName");
+    if(document.activeElement !== input){
+      input.value = state.branchName || "";
+    }
+  }
+
+  function renderStats(){
+    var total = state.assignments.length;
+    var done = state.assignments.filter(function(a){ return a.status === "done"; }).length;
+    var overdue = state.assignments.filter(isOverdue).length;
+    var progress = total - done;
+
+    var row = document.getElementById("statsRow");
+    row.innerHTML =
+      statChip(total, "Всего поручений", "") +
+      statChip(progress, "В работе", "") +
+      statChip(overdue, "Просрочено", "red") +
+      statChip(done, "Выполнено", "green");
+  }
+  function statChip(num, label, cls){
+    return '<div class="stat-chip '+cls+'"><div class="num">'+num+'</div><div class="lbl">'+label+'</div></div>';
+  }
+
+  function renderSidebar(){
+    var list = document.getElementById("deptList");
+    var html = "";
+    var allCount = state.assignments.length;
+    html += '<div class="dept-item '+(state.filterDept==="all"?"active":"")+'" data-action="select-dept" data-dept="all">' +
+      '<span class="dept-name">Все отделы</span><span class="dept-count">'+allCount+'</span></div>';
+
+    state.departments.forEach(function(d){
+      var count = state.assignments.filter(function(a){ return a.departmentId === d.id; }).length;
+      html += '<div class="dept-item '+(state.filterDept===d.id?"active":"")+'" data-action="select-dept" data-dept="'+d.id+'">' +
+        '<span class="dept-name">'+escapeHtml(d.name)+'</span>' +
+        '<span class="dept-count">'+count+'</span>' +
+        '<button type="button" class="dept-del" data-action="delete-dept" data-dept="'+d.id+'" title="Удалить отдел">✕</button>' +
+        '</div>';
+    });
+    list.innerHTML = html;
+  }
+
+  function renderStatusFilters(){
+    var filters = [
+      ["all","Все"],
+      ["progress","В работе"],
+      ["overdue","Просроченные"],
+      ["done","Выполненные"]
+    ];
+    var el = document.getElementById("statusFilters");
+    el.innerHTML = filters.map(function(f){
+      return '<button type="button" class="filter-chip '+(state.filterStatus===f[0]?"active":"")+'" data-action="select-status" data-status="'+f[0]+'">'+f[1]+'</button>';
+    }).join("");
+  }
+
+  function renderContentTitle(){
+    var title = document.getElementById("contentTitle");
+    if(state.filterDept === "all"){
+      title.textContent = "Все отделы";
+    } else {
+      var d = getDept(state.filterDept);
+      title.textContent = d ? d.name : "Отдел";
+    }
+  }
+
+  function filteredAssignments(){
+    return state.assignments.filter(function(a){
+      if(state.filterDept !== "all" && a.departmentId !== state.filterDept) return false;
+      var cs = computeStatus(a);
+      if(state.filterStatus === "progress" && !(cs === "progress" || cs === "soon")) return false;
+      if(state.filterStatus === "overdue" && cs !== "overdue") return false;
+      if(state.filterStatus === "done" && cs !== "done") return false;
+      return true;
+    }).sort(function(x,y){
+      // overdue first, then soon, then progress, then done; within group by due date asc
+      var order = {overdue:0, soon:1, progress:2, done:3};
+      var ox = order[computeStatus(x)], oy = order[computeStatus(y)];
+      if(ox !== oy) return ox - oy;
+      return x.dueDate < y.dueDate ? -1 : x.dueDate > y.dueDate ? 1 : 0;
+    });
+  }
+
+  function renderList(){
+    var area = document.getElementById("listArea");
+    var items = filteredAssignments();
+
+    if(state.departments.length === 0 && state.assignments.length === 0){
+      area.innerHTML = emptyState(
+        "🏢","Начните со структуры филиала",
+        "Добавьте отделы слева, а затем заведите первое поручение — вручную или голосом.");
+      return;
+    }
+    if(items.length === 0){
+      area.innerHTML = emptyState("📋","Поручений не найдено","Измените фильтр или добавьте новое поручение.");
+      return;
+    }
+
+    if(state.filterDept === "all"){
+      // group by department display name
+      var groups = {};
+      var order = [];
+      items.forEach(function(a){
+        var key = deptDisplayName(a);
+        if(!groups[key]){ groups[key] = []; order.push(key); }
+        groups[key].push(a);
+      });
+      var html = "";
+      order.forEach(function(key){
+        html += '<div class="group-title">'+escapeHtml(key)+'</div>';
+        html += '<div class="cards">' + groups[key].map(renderCard).join("") + '</div>';
+      });
+      area.innerHTML = html;
+    } else {
+      area.innerHTML = '<div class="cards">' + items.map(renderCard).join("") + '</div>';
+    }
+  }
+
+  function emptyState(icon, title, text){
+    return '<div class="empty-state"><div class="big">'+icon+'</div><h4>'+escapeHtml(title)+'</h4><p>'+escapeHtml(text)+'</p>' +
+      '<button type="button" class="btn btn-primary" data-action="open-new">+ Новое поручение</button></div>';
+  }
+
+  var STATUS_LABEL = {
+    overdue: "Просрочено",
+    soon: "Срок скоро",
+    progress: "В работе",
+    done: "Выполнено"
+  };
+
+  function renderCard(a){
+    var cs = computeStatus(a);
+    var cardClass = cs === "overdue" ? "red" : cs === "soon" ? "yellow" : cs === "done" ? "green" : "";
+    var pillClass = cs === "overdue" ? "st-overdue" : cs === "soon" ? "st-soon" : cs === "done" ? "st-done" : "st-progress";
+
+    var meta = '<span class="meta-item badge-dept">'+escapeHtml(deptDisplayName(a))+'</span>';
+    meta += '<span class="meta-item">📅 Выдано: '+formatDate(a.assignedDate)+'</span>';
+    meta += '<span class="meta-item">⏰ Срок: '+formatDate(a.dueDate)+'</span>';
+    if(a.executor){ meta += '<span class="meta-item">👤 '+escapeHtml(a.executor)+'</span>'; }
+
+    var note = a.note ? '<div class="card-note">'+escapeHtml(a.note)+'</div>' : "";
+
+    return (
+      '<div class="card '+cardClass+'" data-action="edit-assignment" data-id="'+a.id+'">' +
+        '<div class="card-top">' +
+          '<div class="card-text">'+escapeHtml(a.text)+'</div>' +
+          '<div class="card-actions">' +
+            '<button type="button" data-action="delete-assignment" data-id="'+a.id+'" title="Удалить">✕</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card-meta">' + meta + '</div>' +
+        note +
+        '<div>' +
+          '<span class="status-pill '+pillClass+'" data-action="toggle-status" data-id="'+a.id+'">' +
+            '<span class="dot"></span>' + STATUS_LABEL[cs] +
+          '</span>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  /* ---------- Toast ---------- */
+  var toastTimer;
+  function toast(msg){
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 1800);
+  }
+
+  /* ---------- Departments ---------- */
+  function addDepartment(name){
+    name = name.trim();
+    if(!name) return;
+    state.departments.push({ id: uid(), name: name });
+    saveState(); render();
+  }
+
+  function deleteDepartment(id){
+    var d = getDept(id);
+    if(!d) return;
+    if(!confirm('Удалить отдел «'+d.name+'»? Его поручения останутся в общем реестре.')) return;
+    // snapshot department name onto its assignments before removing
+    state.assignments.forEach(function(a){
+      if(a.departmentId === id){ a.departmentNameSnapshot = d.name; }
+    });
+    state.departments = state.departments.filter(function(x){ return x.id !== id; });
+    if(state.filterDept === id) state.filterDept = "all";
+    saveState(); render();
+    toast("Отдел удалён, поручения сохранены");
+  }
+
+  /* ---------- Assignments ---------- */
+  function openNewModal(){
+    document.getElementById("modalTitle").textContent = "Новое поручение";
+    document.getElementById("f-id").value = "";
+    document.getElementById("f-text").value = "";
+    document.getElementById("f-note").value = "";
+    document.getElementById("f-executor").value = "";
+    document.getElementById("f-assigned").value = todayISO();
+    document.getElementById("f-due").value = "";
+    populateDeptSelect(state.filterDept !== "all" ? state.filterDept : "");
+    document.getElementById("deleteBtn").classList.add("hidden");
+    showModal();
+  }
+
+  function openEditModal(id){
+    var a = state.assignments.find(function(x){ return x.id === id; });
+    if(!a) return;
+    document.getElementById("modalTitle").textContent = "Редактировать поручение";
+    document.getElementById("f-id").value = a.id;
+    document.getElementById("f-text").value = a.text;
+    document.getElementById("f-note").value = a.note || "";
+    document.getElementById("f-executor").value = a.executor || "";
+    document.getElementById("f-assigned").value = a.assignedDate;
+    document.getElementById("f-due").value = a.dueDate;
+    populateDeptSelect(a.departmentId);
+    document.getElementById("deleteBtn").classList.remove("hidden");
+    showModal();
+  }
+
+  function populateDeptSelect(selectedId){
+    var sel = document.getElementById("f-dept");
+    var opts = state.departments.map(function(d){
+      return '<option value="'+d.id+'">'+escapeHtml(d.name)+'</option>';
+    });
+    if(state.departments.length === 0){
+      opts = ['<option value="" disabled>Сначала добавьте отдел слева</option>'];
+    }
+    sel.innerHTML = opts.join("");
+    if(selectedId) sel.value = selectedId;
+  }
+
+  function showModal(){
+    stopRecognition();
+    document.getElementById("overlay").classList.remove("hidden");
+    setTimeout(function(){ document.getElementById("f-text").focus(); }, 30);
+  }
+  function closeModal(){
+    stopRecognition();
+    document.getElementById("overlay").classList.add("hidden");
+  }
+
+  function saveAssignmentFromForm(){
+    var id = document.getElementById("f-id").value;
+    var text = document.getElementById("f-text").value.trim();
+    var deptId = document.getElementById("f-dept").value;
+    var assignedDate = document.getElementById("f-assigned").value;
+    var dueDate = document.getElementById("f-due").value;
+    var executor = document.getElementById("f-executor").value.trim();
+    var note = document.getElementById("f-note").value.trim();
+
+    if(!text){ toast("Укажите текст поручения"); return; }
+    if(!deptId){ toast("Выберите отдел"); return; }
+    if(!assignedDate || !dueDate){ toast("Укажите даты"); return; }
+
+    if(id){
+      var a = state.assignments.find(function(x){ return x.id === id; });
+      if(a){
+        a.text = text; a.departmentId = deptId; a.assignedDate = assignedDate;
+        a.dueDate = dueDate; a.executor = executor; a.note = note;
+        delete a.departmentNameSnapshot;
+      }
+    } else {
+      state.assignments.push({
+        id: uid(), text: text, departmentId: deptId,
+        assignedDate: assignedDate, dueDate: dueDate,
+        executor: executor, note: note, status: "in_progress",
+        createdAt: Date.now()
+      });
+    }
+    saveState();
+    closeModal();
+    render();
+    toast("Сохранено");
+  }
+
+  function deleteAssignment(id){
+    if(!confirm("Удалить это поручение?")) return;
+    state.assignments = state.assignments.filter(function(a){ return a.id !== id; });
+    saveState(); render();
+    toast("Поручение удалено");
+  }
+
+  function toggleStatus(id){
+    var a = state.assignments.find(function(x){ return x.id === id; });
+    if(!a) return;
+    a.status = a.status === "done" ? "in_progress" : "done";
+    saveState(); render();
+  }
+
+  /* ---------- Voice input (Web Speech API) ---------- */
+  var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var activeRecognition = null;
+  var activeButton = null;
+
+  function stopRecognition(){
+    if(activeRecognition){
+      try{ activeRecognition.stop(); }catch(e){}
+    }
+  }
+
+  function startVoiceInput(fieldId, btn){
+    if(!SpeechRecognitionCtor){
+      toast("Голосовой ввод не поддерживается в этом браузере. Введите текст вручную.");
+      return;
+    }
+    // if this button is already recording, stop it
+    if(activeButton === btn){
+      stopRecognition();
+      return;
+    }
+    stopRecognition();
+
+    var field = document.getElementById(fieldId);
+    var baseValue = field.value;
+    var separator = baseValue && !/\s$/.test(baseValue) ? " " : "";
+
+    var rec = new SpeechRecognitionCtor();
+    rec.lang = "ru-RU";
+    rec.continuous = true;
+    rec.interimResults = true;
+
+    rec.onstart = function(){
+      btn.classList.add("recording");
+      activeRecognition = rec;
+      activeButton = btn;
+    };
+    rec.onresult = function(evt){
+      var finalText = "";
+      var interimText = "";
+      for(var i=0;i<evt.results.length;i++){
+        var r = evt.results[i];
+        if(r.isFinal) finalText += r[0].transcript;
+        else interimText += r[0].transcript;
+      }
+      field.value = baseValue + separator + (finalText + interimText).trim();
+    };
+    rec.onerror = function(evt){
+      if(evt.error === "not-allowed" || evt.error === "service-not-allowed"){
+        toast("Нет доступа к микрофону. Разрешите доступ в настройках браузера.");
+      } else if(evt.error !== "no-speech" && evt.error !== "aborted"){
+        toast("Ошибка распознавания речи: " + evt.error);
+      }
+    };
+    rec.onend = function(){
+      btn.classList.remove("recording");
+      if(activeRecognition === rec){ activeRecognition = null; activeButton = null; }
+    };
+
+    try{ rec.start(); }catch(e){ toast("Не удалось запустить микрофон"); }
+  }
+
+  function voiceNewAssignment(){
+    openNewModal();
+    setTimeout(function(){
+      var btn = document.querySelector('.mic-btn[data-mic-target="f-text"]');
+      startVoiceInput("f-text", btn);
+    }, 120);
+  }
+
+  /* ---------- Event delegation ---------- */
+  document.addEventListener("click", function(e){
+    var actionEl = e.target.closest("[data-action]");
+    if(!actionEl) return;
+    var action = actionEl.getAttribute("data-action");
+
+    switch(action){
+      case "open-new": openNewModal(); break;
+      case "voice-new": voiceNewAssignment(); break;
+      case "close-modal": closeModal(); break;
+      case "select-dept":
+        state.filterDept = actionEl.getAttribute("data-dept");
+        saveState(); render();
+        break;
+      case "select-status":
+        state.filterStatus = actionEl.getAttribute("data-status");
+        saveState(); render();
+        break;
+      case "delete-dept":
+        e.stopPropagation();
+        deleteDepartment(actionEl.getAttribute("data-dept"));
+        break;
+      case "edit-assignment":
+        openEditModal(actionEl.getAttribute("data-id"));
+        break;
+      case "delete-assignment":
+        e.stopPropagation();
+        deleteAssignment(actionEl.getAttribute("data-id"));
+        break;
+      case "toggle-status":
+        e.stopPropagation();
+        toggleStatus(actionEl.getAttribute("data-id"));
+        break;
+      case "delete-current":
+        var curId = document.getElementById("f-id").value;
+        if(curId){ closeModal(); deleteAssignment(curId); }
+        break;
+    }
+
+    if(actionEl.classList.contains("mic-btn")){
+      startVoiceInput(actionEl.getAttribute("data-mic-target"), actionEl);
+    }
+  });
+
+  document.getElementById("overlay").addEventListener("click", function(e){
+    if(e.target.id === "overlay") closeModal();
+  });
+
+  document.getElementById("assignmentForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    saveAssignmentFromForm();
+  });
+
+  document.getElementById("addDeptForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var input = document.getElementById("newDeptInput");
+    addDepartment(input.value);
+    input.value = "";
+  });
+
+  document.getElementById("branchName").addEventListener("input", function(e){
+    state.branchName = e.target.value;
+    saveState();
+  });
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && !document.getElementById("overlay").classList.contains("hidden")){
+      closeModal();
+    }
+  });
+
+  if(!SpeechRecognitionCtor){
+    document.getElementById("voiceHintText").textContent = "Голосовой ввод не поддерживается в этом браузере — введите текст вручную.";
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
